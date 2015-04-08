@@ -9,6 +9,10 @@ namespace MiniBlogFormatter
         private Regex rxFiles = new Regex("(href|src)=\"(([^\"]+)?(file|image)\\.axd\\?(file|picture)=([^\"]+))\"", RegexOptions.IgnoreCase);
         private Regex rxAggBug = new Regex("<img (.*) src=(.*(aggbug.ashx).*) />", RegexOptions.IgnoreCase);
 
+        private readonly Regex rxCode = new Regex("(?<all><font face=\"Courier New\">(?<code>[^<]+)</font>)", RegexOptions.IgnoreCase);
+        private readonly Regex rxCode2 = new Regex("(?<all><span style=\"font-family:\\s*Courier New;*\">(?<code>[^<]+)</span>)", RegexOptions.IgnoreCase);
+        private readonly Regex rxCode3 = new Regex("(?<all><span style=\"font-family:\\s*Courier New,\\s*courier;*\">(?<code>[^<]+)</span>)", RegexOptions.IgnoreCase);
+
         public void Format(string fileName, string targetFolderPath, string categoriesFileName)
         {
             XmlDocument doc = new XmlDocument();
@@ -22,6 +26,8 @@ namespace MiniBlogFormatter
             {
                 FormatSlug(doc);
                 FormatFileReferences(doc);
+                FormatCode(doc);
+                ReplaceTeaserMarker(doc);
                 RemoveAggBug(doc);
                 RemoveSpamComments(doc);
 
@@ -44,6 +50,40 @@ namespace MiniBlogFormatter
                 {
                     content.InnerText = content.InnerText.Replace(match.Groups[2].Value, "/posts/files/" + match.Groups[6].Value);
                 }
+            }
+        }
+
+        private void FormatCode(XmlDocument doc)
+        {
+            DoFormatCode(doc, rxCode);
+            DoFormatCode(doc, rxCode2);
+            DoFormatCode(doc, rxCode3);
+        }
+
+        private static void DoFormatCode(XmlDocument doc, Regex regex)
+        {
+            XmlNode content = doc.SelectSingleNode("post/content");
+
+            if (content != null)
+            {
+                foreach (Match match in regex.Matches(content.InnerText))
+                {
+                    content.InnerText = content.InnerText.Replace(match.Groups["all"].Value, 
+                        "<code>" + match.Groups["code"].Value + "</code>");
+                }
+            }
+        }
+
+        private const string OldTeaserMarker = "<p>[more]</p>";
+        private const string NewTeaserMarker = "<!--more-->";
+
+        private static void ReplaceTeaserMarker(XmlDocument doc)
+        {
+            XmlNode content = doc.SelectSingleNode("post/content");
+
+            if (content != null)
+            {
+                content.InnerText = content.InnerText.Replace(OldTeaserMarker, NewTeaserMarker);
             }
         }
 

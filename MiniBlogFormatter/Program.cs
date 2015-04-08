@@ -8,23 +8,24 @@ namespace MiniBlogFormatter
         static void Main(string[] args)
         {
             // For BlogEngine.NET only
-            var categories = @"C:\dev\MiniBlogFormatter\myblogposts";
+            var categories = @"d:\download\wwwroot\App_Data\categories.xml";
 
             // For both BlogEngine.NET and DasBlog
             //var origin = @"C:\Temp\GhostData.json";
-            //var destination = @"C:\Temp\Formatted";
+            var folder = @"d:\download\wwwroot\App_Data\posts";
+            var destination = @"d:\download\posts";
 
 
-            //BlogEngine(categories, folder, destination);
+            BlogEngine(categories, folder, destination);
             //Wordpress(origin, destination);
 
             //Ghost(origin, destination);
 
             // For BlogML
-            var origin = @"C:\dev\BlogMLExport.xml";
-            var destination = @"C:\dev\formatted";
+            //var origin = @"C:\dev\BlogMLExport.xml";
+            //var destination = @"C:\dev\formatted";
 
-            BlogML(origin, destination);
+            //BlogML(origin, destination);
         }
 
         static void BlogML(string file, string destination)
