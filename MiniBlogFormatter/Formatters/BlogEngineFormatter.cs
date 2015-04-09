@@ -36,6 +36,7 @@ namespace MiniBlogFormatter
                 FormatCode(doc);
                 ReplaceTeaserMarker(doc);
                 FormatImages(doc);
+                UpdateAuthor(doc, "Andrei Dzimchuk");
 
                 RemoveAggBug(doc);
                 RemoveSpamComments(doc);
@@ -133,6 +134,15 @@ namespace MiniBlogFormatter
                     throw new Exception("Image has no title and no alternative text");
                 }
             }
+        }
+
+        private void UpdateAuthor(XmlDocument doc, string author)
+        {
+            XmlNode authorNode = doc.SelectSingleNode("post/author");
+            if (authorNode == null)
+                return;
+
+            authorNode.InnerText = author;
         }
 
         private void FormatSlug(XmlDocument doc)
