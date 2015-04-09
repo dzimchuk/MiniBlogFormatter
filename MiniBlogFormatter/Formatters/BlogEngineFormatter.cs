@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Xml;
 
@@ -8,6 +9,11 @@ namespace MiniBlogFormatter
     {
         private Regex rxFiles = new Regex("(href|src)=\"(([^\"]+)?(file|image)\\.axd\\?(file|picture)=([^\"]+))\"", RegexOptions.IgnoreCase);
         private Regex rxAggBug = new Regex("<img (.*) src=(.*(aggbug.ashx).*) />", RegexOptions.IgnoreCase);
+
+        private Regex rxImg = new Regex("<img [^>]+>", RegexOptions.IgnoreCase);
+        private Regex rxImgSrc = new Regex("<img .*src=\"(?<src>[^\"]+)\".*>", RegexOptions.IgnoreCase);
+        private Regex rxImgTitle = new Regex("<img .*title=\"(?<title>[^\"]+)\".*>", RegexOptions.IgnoreCase);
+        private Regex rxImgAlt = new Regex("<img .*alt=\"(?<alt>[^\"]+)\".*>", RegexOptions.IgnoreCase);
 
         private readonly Regex rxCode = new Regex("(?<all><font face=\"Courier New\">(?<code>[^<]+)</font>)", RegexOptions.IgnoreCase);
         private readonly Regex rxCode2 = new Regex("(?<all><span style=\"font-family:\\s*Courier New;*\">(?<code>[^<]+)</span>)", RegexOptions.IgnoreCase);
@@ -26,8 +32,11 @@ namespace MiniBlogFormatter
             {
                 FormatSlug(doc);
                 FormatFileReferences(doc);
+                
                 FormatCode(doc);
                 ReplaceTeaserMarker(doc);
+                FormatImages(doc);
+
                 RemoveAggBug(doc);
                 RemoveSpamComments(doc);
 
@@ -84,6 +93,45 @@ namespace MiniBlogFormatter
             if (content != null)
             {
                 content.InnerText = content.InnerText.Replace(OldTeaserMarker, NewTeaserMarker);
+            }
+        }
+
+        private void FormatImages(XmlDocument doc)
+        {
+            XmlNode content = doc.SelectSingleNode("post/content");
+            if (content == null)
+                return;
+
+            foreach (Match match in rxImg.Matches(content.InnerText))
+            {
+                var source = rxImgSrc.Match(match.Value);
+                if (!source.Success)
+                    throw new Exception("Image source not found");
+
+                var title = rxImgTitle.Match(match.Value);
+                var alt = rxImgAlt.Match(match.Value);
+
+                const string format = "<img src=\"{0}\" title=\"{1}\" alt=\"{2}\" class=\"img-responsive center-block\">";
+
+                if (title.Success && alt.Success)
+                {
+                    content.InnerText = content.InnerText.Replace(match.Value,
+                        string.Format(format, source.Groups["src"].Value, title.Groups["title"].Value, alt.Groups["alt"].Value));
+                }
+                else if (title.Success)
+                {
+                    content.InnerText = content.InnerText.Replace(match.Value,
+                        string.Format(format, source.Groups["src"].Value, title.Groups["title"].Value, title.Groups["title"].Value));
+                }
+                else if (alt.Success)
+                {
+                    content.InnerText = content.InnerText.Replace(match.Value,
+                       string.Format(format, source.Groups["src"].Value, alt.Groups["alt"].Value, alt.Groups["alt"].Value));
+                }
+                else
+                {
+                    throw new Exception("Image has no title and no alternative text");
+                }
             }
         }
 
